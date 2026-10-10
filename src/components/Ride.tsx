@@ -1,0 +1,254 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import MapView from "./MapView";
+import ModeBadge, { MODE_ICON } from "./ModeBadge";
+import { Journey, mulberry32 } from "../game/engine";
+import { fmtMoney, fmtTime } from "../game/format";
+import { LINE, STATION, project } from "../game/network";
+import { CALM_THRESHOLD } from "../game/scoring";
+import type { Link, Mission } from "../game/types";
+
+interface Props {
+  mission: Mission;
+  route: Link[];
+  onFinish: (j: Journey) => void;
+  onAbandon: () => void;
+}
+
+const SPEEDS = [1, 2, 4] as const;
+/** Game minutes per real second at 1×. */
+const MINUTES_PER_SECOND = 1;
+const SKIP_SPEED = 20;
+
+const ANNOUNCEMENTS: Record<string, string[]> = {
+  rail: [
+    "Please mind the gap between the train and the platform.",
+    "Please move right down inside the carriage.",
+    "Please keep your belongings with you at all times.",
+    "Stand on the right on the escalators, please.",
+    "Please let passengers off the train first.",
+  ],
+  bus: ["Bus stopping.", "Please hold on, the bus is about to move.", "Press the bell in good time for your stop."],
+  boat: ["Welcome aboard. Refreshments are available at the bar.", "Look left for the best view of the city."],
+  walk: ["Pavement shuffle engaged.", "Dodging a tourist with a wheelie case…", "Waiting at the crossing…"],
+  bike: ["Pedalling hard up a slight incline.", "A bus is squeezing past. Hold your line.", "Bell, bell!"],
+};
+
+function announcementsFor(mode: string) {
+  if (mode === "bus" || mode === "boat" || mode === "walk" || mode === "bike") return ANNOUNCEMENTS[mode];
+  return ANNOUNCEMENTS.rail;
+}
+
+export default function Ride({ mission, route, onFinish, onAbandon }: Props) {
+  const journey = useMemo(() => new Journey(mission, route, mulberry32(Date.now() & 0xffffffff)), [mission, route]);
+  const [, setTick] = useState(0);
+  const [speed, setSpeed] = useState<number>(1);
+  const [paused, setPaused] = useState(false);
+  const [skipping, setSkipping] = useState(false);
+  const finished = useRef(false);
+
+  // Animation loop: advance game time by real time × speed.
+  useEffect(() => {
+    let raf = 0;
+    let last = performance.now();
+    const frame = (now: number) => {
+      const dt = Math.min(0.25, (now - last) / 1000);
+      last = now;
+      if (!paused && !journey.pending && !journey.done) {
+        journey.advance(dt * MINUTES_PER_SECOND * (skipping ? SKIP_SPEED : speed));
+        if (journey.pending) setSkipping(false);
+        setTick((t) => t + 1);
+      }
+      if (journey.done && !finished.current) {
+        finished.current = true;
+        setTimeout(() => onFinish(journey), 900);
+      }
+      raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  }, [journey, paused, speed, skipping, onFinish]);
+
+  // Keyboard shortcuts: 1/2/4 for speed, space to pause.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (journey.pending) return;
+      if (e.key === "1" || e.key === "2" || e.key === "4") setSpeed(Number(e.key));
+      if (e.key === " ") {
+        e.preventDefault();
+        setPaused((p) => !p);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [journey]);
+
+  const link = journey.link ?? route[route.length - 1];
+  const from = project(STATION[link.from].lat, STATION[link.from].lon);
+  const to = project(STATION[link.to].lat, STATION[link.to].lon);
+  const t = journey.done ? 1 : journey.phase === "move" ? journey.progress : 0;
+  const rider = { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t, mode: link.mode };
+
+  const minutesLeft = mission.deadline - journey.clock;
+  const timeState = minutesLeft < 0 ? "bad" : minutesLeft < 8 ? "warn" : "good";
+  const moving = journey.phase === "move" && !paused && !journey.pending && !journey.done;
+  const effectiveSpeed = skipping ? SKIP_SPEED : speed;
+  const lines = announcementsFor(link.mode);
+  const announcement = lines[Math.floor(journey.clock / 3) % lines.length];
+  const remainingStops = route.slice(journey.legIdx).map((l) => l.to);
+
+  const status = journey.done
+    ? `Arrived at ${STATION[mission.to].name}!`
+    : journey.phase === "wait"
+      ? link.mode === "bike"
+        ? `Unlocking a hire bike at ${STATION[link.from].name}`
+        : `Waiting for the ${LINE[link.line].name} at ${STATION[link.from].name}`
+      : link.mode === "walk"
+        ? `Walking to ${STATION[link.to].name}`
+        : link.mode === "bike"
+          ? `Cycling to ${STATION[link.to].name}`
+          : `${LINE[link.line].name} to ${STATION[link.to].name}`;
+
+  return (
+    <div className="screen ride">
+      <header className="hud">
+        <div className={`hud-clock ${timeState}`}>
+          <span className="hud-big">{fmtTime(journey.clock)}</span>
+          <span className="hud-sub">
+            due {fmtTime(mission.deadline)} ·{" "}
+            {minutesLeft >= 0 ? `${Math.floor(minutesLeft)} min to spare` : `${Math.ceil(-minutesLeft)} min late`}
+          </span>
+        </div>
+        <div className={`hud-item ${journey.meter.total > mission.budget ? "bad" : ""}`}>
+          <span className="hud-label">Spent</span>
+          <span className="hud-val">
+            {fmtMoney(journey.meter.total)} <span className="muted">/ {fmtMoney(mission.budget)}</span>
+          </span>
+        </div>
+        <div className="hud-item stress">
+          <span className="hud-label">Stress</span>
+          <div className="meter">
+            <div
+              className={`meter-fill ${journey.stress > CALM_THRESHOLD ? "bad" : ""}`}
+              style={{ width: `${journey.stress}%` }}
+            />
+          </div>
+        </div>
+      </header>
+
+      <div className="layout">
+        <section className="map-wrap">
+          <MapView mission={mission} route={route} rider={rider} current={link.to} />
+        </section>
+
+        <aside className="panel">
+          <div className={`window window-${link.mode} ${moving ? "moving" : ""}`} style={{ ["--speed" as string]: effectiveSpeed }}>
+            <div className="window-scene" />
+            <div className="window-frame">
+              <span className="window-icon">{MODE_ICON[link.mode]}</span>
+            </div>
+          </div>
+
+          <div className="card now">
+            <div className="row gap-s">
+              <ModeBadge lineId={link.line} short />
+              <strong>{status}</strong>
+            </div>
+            {!journey.done && (
+              <div className="progress">
+                <div className="progress-fill" style={{ width: `${Math.round(journey.progress * 100)}%` }} />
+              </div>
+            )}
+            <p className="announce">“{announcement}”</p>
+            {remainingStops.length > 1 && (
+              <p className="muted small">
+                Next: {remainingStops.slice(1, 5).map((s) => STATION[s].name).join(" → ")}
+                {remainingStops.length > 5 && " → …"}
+              </p>
+            )}
+          </div>
+
+          <div className="card controls">
+            <div className="speed">
+              <button className={`speed-btn ${paused ? "on" : ""}`} onClick={() => setPaused((p) => !p)}>
+                {paused ? "Resume" : "Pause"}
+              </button>
+              {SPEEDS.map((s) => (
+                <button
+                  key={s}
+                  className={`speed-btn ${speed === s && !skipping ? "on" : ""}`}
+                  onClick={() => {
+                    setSpeed(s);
+                    setSkipping(false);
+                    setPaused(false);
+                  }}
+                >
+                  {s}×
+                </button>
+              ))}
+              <button
+                className={`speed-btn skip ${skipping ? "on" : ""}`}
+                onClick={() => {
+                  setSkipping((v) => !v);
+                  setPaused(false);
+                }}
+                title="Fast-forward until something happens"
+              >
+                ⏩ Skip
+              </button>
+            </div>
+            <p className="fineprint">Bored? Ride at 2× or 4×, or skip ahead. Anything that needs your decision will still stop you.</p>
+          </div>
+
+          <div className="card log">
+            <h3>Journey log</h3>
+            <ul>
+              {[
+                ...journey.meter.charges.map((c) => ({ time: c.time, text: `${c.label}: ${fmtMoney(c.amount)}`, kind: "charge" })),
+                ...journey.log.map((l) => ({ ...l, kind: "event" })),
+              ]
+                .sort((a, b) => b.time - a.time)
+                .map((e, i) => (
+                  <li key={i} className={e.kind}>
+                    <span className="log-time">{fmtTime(e.time)}</span> {e.text}
+                  </li>
+                ))}
+              {journey.meter.charges.length + journey.log.length === 0 && <li className="muted">Nothing yet. Enjoy the ride.</li>}
+            </ul>
+          </div>
+
+          <button className="ghost small" onClick={onAbandon}>
+            Abandon and replan
+          </button>
+        </aside>
+      </div>
+
+      {journey.pending && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="event-title">
+          <div className="modal">
+            <div className="modal-emoji">{journey.pending.emoji}</div>
+            <h3 id="event-title">{journey.pending.title}</h3>
+            <p>{journey.pending.text}</p>
+            <div className="choices">
+              {journey.pending.choices.map((c, i) => (
+                <button
+                  key={i}
+                  className="choice"
+                  onClick={() => {
+                    journey.resolve(i);
+                    setTick((t) => t + 1);
+                  }}
+                >
+                  <strong>{c.label}</strong>
+                  <span>{c.hint}</span>
+                </button>
+              ))}
+            </div>
+            <p className="fineprint">
+              {fmtTime(journey.clock)} · {fmtMoney(journey.meter.total)} spent
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
