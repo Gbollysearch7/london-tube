@@ -1,10 +1,12 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import type { Journey } from "../game/engine";
 import { fmtMoney, fmtTime } from "../game/format";
 import { STATION } from "../game/network";
 import { CALM_THRESHOLD, type Outcome } from "../game/scoring";
 import { solve } from "../game/solver";
 import type { Mission } from "../game/types";
+import { Confetti, buzz, sfx } from "../juice";
+import "../juice/juice.css";
 
 interface Props {
   mission: Mission;
@@ -19,6 +21,7 @@ interface Props {
 
 export default function Result({ mission, journey, outcome, best, hasNext, onRetry, onNext, onMenu }: Props) {
   const ref = useMemo(() => solve(mission), [mission]);
+  const finale = !hasNext && outcome.stars > 0;
   const headline = !outcome.onTime
     ? "Late! The doors closed without you."
     : outcome.stars === 3
@@ -27,12 +30,23 @@ export default function Result({ mission, journey, outcome, best, hasNext, onRet
         ? "Made it. Not bad at all."
         : "Made it… just about.";
 
+  // 3 stars get confetti + fanfare via <Confetti />; late gets the sting; anything else a modest coin.
+  useEffect(() => {
+    if (!outcome.onTime) {
+      sfx("late");
+      buzz("late");
+    } else if (outcome.stars > 0 && outcome.stars < 3) {
+      sfx("coin");
+    }
+  }, [outcome]);
+
   return (
     <div className="screen result">
       <div className="result-card">
         <p className="eyebrow">{mission.title}</p>
         <h2>{headline}</h2>
-        <div className="stars" aria-label={`${outcome.stars} of 3 stars`}>
+        {outcome.onTime && outcome.stars === 3 && <Confetti kind="big" fire={outcome} />}
+        <div className="stars juice-stars" aria-label={`${outcome.stars} of 3 stars`}>
           {[0, 1, 2].map((i) => (
             <span key={i} className={i < outcome.stars ? "star on" : "star"}>
               ★
@@ -105,6 +119,12 @@ export default function Result({ mission, journey, outcome, best, hasNext, onRet
             <strong>{STATION[mission.to].name}</strong>
           </div>
         </div>
+
+        {finale && (
+          <p className="tip finale">
+            <strong>🏁 That's every mission done.</strong> You've crossed London end to end. Go back for any stars you missed.
+          </p>
+        )}
 
         <p className="tip">
           <strong>Local tip:</strong> {mission.tip}

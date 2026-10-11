@@ -1,0 +1,57 @@
+/* Juice: small motion cues. All motion is dropped for reduced-motion users. */
+
+/* Clock pulses red in the last five minutes. */
+.hud-clock.juice-pulse .hud-big {
+  animation: juice-pulse 1s ease-in-out infinite;
+}
+@keyframes juice-pulse {
+  50% {
+    color: var(--bad);
+    transform: scale(1.06);
+  }
+}
+
+/* A short shake the moment you become late. */
+.juice-shake {
+  animation: juice-shake 0.5s ease-in-out;
+}
+@keyframes juice-shake {
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+/* Result stars pop in one by one. */
+.stars.juice-stars .star {
+  display: inline-block;
+  animation: juice-star 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.stars.juice-stars .star:nth-child(2) {
+  animation-delay: 0.18s;
+}
+.stars.juice-stars .star:nth-child(3) {
+  animation-delay: 0.36s;
+}
+@keyframes juice-star {
+  from {
+    transform: scale(0) rotate(-30deg);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-clock.juice-pulse .hud-big,
+  .juice-shake,
+  .stars.juice-stars .star {
+    animation: none;
+  }
+  /* Still signal urgency without movement. */
+  .hud-clock.juice-pulse .hud-big {
+    color: var(--bad);
+  }
+}

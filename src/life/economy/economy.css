@@ -1,0 +1,163 @@
+/* Economy module: season card, goals, shop. */
+
+.eco-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.eco-head {
+  width: 100%;
+  margin-bottom: 0;
+  text-align: left;
+}
+.eco-chip {
+  align-self: flex-start;
+  color: var(--accent);
+}
+.eco-weeks {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 3px;
+}
+.eco-weeks span {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+}
+.eco-weeks .past {
+  background: var(--muted);
+}
+.eco-weeks .now {
+  background: var(--accent);
+}
+.eco-goal {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.88rem;
+}
+.eco-goal.done {
+  opacity: 0.75;
+}
+.eco-goal-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.eco-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.eco-bar > div {
+  height: 100%;
+  background: var(--good);
+  transition: width 0.3s ease;
+}
+.eco-bar.season > div {
+  background: var(--accent);
+}
+/* For "stay under" goals, filling up is bad news. */
+.eco-bar.under > div {
+  background: var(--warn);
+}
+.eco-goal.done .eco-bar > div {
+  background: var(--good);
+}
+.eco-season {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.eco-season h4 {
+  margin: 0;
+}
+
+/* Report card */
+.eco-report {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.eco-grade {
+  font-size: 4rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+}
+.eco-grade.small {
+  font-size: 1.6rem;
+}
+.eco-grade.g-A,
+.eco-grade.g-B {
+  color: var(--good);
+}
+.eco-grade.g-D,
+.eco-grade.g-E {
+  color: var(--warn);
+}
+.eco-grade.g-F {
+  color: var(--bad);
+}
+.eco-rows {
+  list-style: none;
+  margin: 6px 0;
+  padding: 0;
+  text-align: left;
+}
+.eco-rows li {
+  display: grid;
+  grid-template-columns: 1fr auto 2.2em;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line);
+}
+.eco-rows strong {
+  text-align: right;
+}
+.eco-title {
+  color: var(--text);
+}
+
+/* Shop */
+.eco-tabs {
+  flex-wrap: wrap;
+}
+.eco-tabs button {
+  flex: 1 0 30%;
+}
+.eco-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.eco-item .prow-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.eco-item .tag {
+  align-self: flex-start;
+  margin-left: 0;
+}
+.eco-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+.eco-select {
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--p-bg, var(--card-2));
+  border: 1px solid var(--p-line, var(--line));
+  border-radius: 8px;
+  padding: 5px 8px;
+  max-width: 100%;
+}

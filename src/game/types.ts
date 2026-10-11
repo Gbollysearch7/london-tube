@@ -53,6 +53,21 @@ export interface Mission {
   weather: Weather;
   closedLines: string[];
   tip: string;
+  /** Travel passes the player owns, which change fares (London Life purchases). */
+  passes?: Passes;
+  /** Lines running slower than usual: multiplier on in-vehicle time, e.g. { victoria: 1.3 }. */
+  delayedLines?: Record<string, number>;
+}
+
+export interface Passes {
+  /** Weekly travelcard covering zones 1..n: rail and bus trips inside it cost nothing extra. */
+  travelcardZones?: number;
+  /** Bus & tram pass: buses are free. */
+  busPass?: boolean;
+  /** Railcard: a third off off-peak rail fares. */
+  railcard?: boolean;
+  /** Own bike: cycling is free (no hire-bike charge). */
+  ownBike?: boolean;
 }
 
 export interface Charge {

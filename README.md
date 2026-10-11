@@ -1,4 +1,6 @@
-# Mind the Gap: a London commute game
+# Tube Life
+
+*Mind the Gap: your London life, one commute at a time.*
 
 Plan your way across London by Tube, Elizabeth line, Overground, DLR, rail, bus, river bus, hire bike or on foot.
 Arrive **on time**, stay **under budget** and keep your **stress** down.
@@ -19,6 +21,39 @@ Arrive **on time**, stay **under budget** and keep your **stress** down.
 - Hire bikes: £1.65 per 30 minutes. River bus: £5.20 flat.
 
 Fares, times and routes are simplified for the game. They are not live data.
+
+## Game modes
+
+- **🏙️ Your Tube Life:** the main mode. Rent a room in a real area, hold down a job, and keep your Energy, Hunger, Social and Fun
+  up. Every trip (to work, to Camden Market, home at 2am on the night bus) is a real commute you plan and ride.
+  Get promoted, move house, collect postcards and badges. Design: [docs/LONDON-LIFE.md](docs/LONDON-LIFE.md).
+- **📅 Today in London:** one commute per real day, the same for every player, with closures from live TfL.
+  Your first run goes on the day's leaderboard and pays into your Tube Life bank.
+- **🚇 Commute Challenges:** the 10 hand-made missions.
+
+Inside your life: six characters who text you (your flatmate Jess, best mate Dele, your manager, Mum, Sam and a work mate)
+with invites to meet at real places at real times; 12-week seasons with report cards and weekly transport goals; a shop
+of travelcards, railcards, a bike, home upgrades and your own coffee cart at a station; one-tap routine commutes; daily
+fare caps; realistic delays and strikes; and sound, confetti and haptics. The phone is an iPhone with live widgets.
+
+Reasons to come back: a daily streak bonus, a rested bonus after time away (absence is never punished), the daily
+challenge and its leaderboard, promotions, postcards, badges, and friends to text and hang out with.
+
+Your life saves in your browser. Balance is checked by simulated players in `src/life/sim.ts` (`npm test`).
+
+## The phone
+
+Press **P** or the 📱 button to open your in-game phone, even mid-journey. It has 22 apps: Messages and Contacts
+(text other players live), Go, Line Status and Arrivals (live from TfL), Oyster, Clock, Weather, Fare Finder,
+The Commute (live feed), League, Today, Bank, Jobs, Homes, Badges, Postcards, Tunes, Tips, Invite, Help and Settings.
+
+- **Texting** runs on Supabase (`.env` holds the project URL and publishable key).
+  ⚠️ It is in **test mode with no sign-in**: see [SECURITY-TODO.md](SECURITY-TODO.md) before any public release.
+- **Testing two players on one computer:** open a second window with `?player=2` on the URL. Each `?player=` value is
+  a separate player.
+- **Live TfL data:** Line Status and Arrivals call the TfL Unified API directly. It works without a key at low volume;
+  set `VITE_TFL_APP_KEY` (free from the TfL API portal) for higher limits. Powered by TfL Open Data.
+  Missions still run on the game's own network, so they're always solvable.
 
 ## Development
 

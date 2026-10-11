@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MapView from "./MapView";
 import ModeBadge from "./ModeBadge";
 import Brief from "./Brief";
@@ -7,6 +7,7 @@ import { fmtDelta, fmtMoney, fmtTime } from "../game/format";
 import { LINE, STATION } from "../game/network";
 import { availableLinks, solve } from "../game/solver";
 import { CALM_THRESHOLD } from "../game/scoring";
+import { setGameView } from "../phone/gameBridge";
 import type { Link, Mission, Mode } from "../game/types";
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
   initialRoute?: Link[];
   onStart: (route: Link[]) => void;
   onBack: () => void;
+  backLabel?: string;
 }
 
 const MODE_ORDER: Mode[] = ["tube", "elizabeth", "overground", "dlr", "rail", "boat", "bus", "bike", "walk"];
@@ -31,11 +33,15 @@ export function groupRoute(route: Link[]): { line: string; from: string; to: str
   return out;
 }
 
-export default function Planner({ mission, initialRoute = [], onStart, onBack }: Props) {
+export default function Planner({ mission, initialRoute = [], onStart, onBack, backLabel = "← Missions" }: Props) {
   const [route, setRoute] = useState<Link[]>(initialRoute);
   const [filter, setFilter] = useState<string | null>(null);
   const [showHint, setShowHint] = useState(false);
   const [showBuses, setShowBuses] = useState(true);
+
+  useEffect(() => {
+    setGameView({ route });
+  }, [route]);
 
   const at = routeEndsAt(mission, route);
   const arrived = at === mission.to;
@@ -73,7 +79,7 @@ export default function Planner({ mission, initialRoute = [], onStart, onBack }:
     <div className="screen planner">
       <header className="topbar">
         <button className="ghost" onClick={onBack}>
-          ← Missions
+          {backLabel}
         </button>
         <h2>{mission.title}</h2>
         <span />

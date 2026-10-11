@@ -1,0 +1,117 @@
+/* Today in London: the daily ritual */
+.daily-masthead {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.daily-masthead .live-chip {
+  margin-bottom: 0;
+}
+.daily-num {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+}
+.daily-date {
+  font-weight: 600;
+}
+.daily-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.daily-cta p {
+  margin: 0;
+}
+.daily-streak {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+}
+.daily-streak.at-risk {
+  border-color: var(--warn);
+  background: rgba(242, 163, 60, 0.12);
+}
+.daily-countdown {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.daily-share {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+}
+.daily-share-text {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: left;
+  user-select: all;
+}
+.daily-rank {
+  margin: 4px 0 0;
+  text-align: center;
+}
+.daily-board-gap {
+  justify-content: center;
+  background: none !important;
+  color: var(--muted);
+  padding: 0 !important;
+  display: flex !important;
+}
+.daily-board-card h3 {
+  margin: 0;
+}
+.daily-practice {
+  display: inline-block;
+  color: var(--warn);
+  margin: 0 auto 6px;
+}
+.daily-result .daily-streak,
+.daily-result .daily-board-card {
+  margin: 10px 0;
+  text-align: left;
+}
+.daily-new {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  border: 1px solid var(--accent);
+}
+
+/* Phone Today app */
+.today-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.today-head .daily-num {
+  font-size: 1.3rem;
+}
+.pcard.daily-streak {
+  background: var(--p-card);
+  border-color: var(--p-line);
+}
+.pcard.daily-streak.at-risk {
+  border-color: var(--warn);
+}

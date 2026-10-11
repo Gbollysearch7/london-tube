@@ -1,0 +1,973 @@
+/* ===================== The in-game iPhone =====================
+   Loaded after styles.css so these rules define the phone's look. Dark-mode iOS palette. */
+
+.phone,
+.phone-banner {
+  --ios-blue: #0a84ff;
+  --ios-green: #30d158;
+  --ios-red: #ff453a;
+  --ios-orange: #ff9f0a;
+  --ios-label: #ffffff;
+  --ios-label-2: rgba(235, 235, 245, 0.6);
+  --ios-label-3: rgba(235, 235, 245, 0.3);
+  --ios-bg: #000000;
+  --ios-group: #1c1c1e;
+  --ios-group-2: #2c2c2e;
+  --ios-sep: rgba(84, 84, 88, 0.6);
+  --ios-fill: rgba(118, 118, 128, 0.24);
+  /* Variables the apps already use, mapped onto iOS colours. */
+  --p-bg: var(--ios-bg);
+  --p-card: var(--ios-group);
+  --p-line: var(--ios-sep);
+  --muted: var(--ios-label-2);
+  --text: var(--ios-label);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Launcher button: a tiny iPhone ---------- */
+.phone-fab {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 40;
+  width: 54px;
+  height: 92px;
+  padding: 4px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #8d8f94, #3c3e43 45%, #6f7176);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.phone-fab:hover {
+  transform: translateY(-3px) rotate(-3deg);
+}
+.phone-fab-screen {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background: radial-gradient(circle at 30% 20%, #6a5cff 0%, transparent 55%), radial-gradient(circle at 80% 85%, #ff6a3d 0%, transparent 55%), #0b0b16;
+}
+.phone-fab-island {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 18px;
+  height: 6px;
+  margin-left: -9px;
+  border-radius: 6px;
+  background: #000;
+}
+.ios-badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: #ff3b30;
+  color: #fff;
+  font: 600 13px/22px -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+}
+
+/* ---------- Banner (outside and inside the phone) ---------- */
+.phone-banner-wrap {
+  position: fixed;
+  right: 20px;
+  bottom: 128px;
+  z-index: 41;
+  width: min(360px, calc(100vw - 32px));
+}
+.phone-banner {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: 22px;
+  text-align: left;
+  color: #fff;
+  background: rgba(40, 40, 46, 0.72);
+  backdrop-filter: blur(30px) saturate(1.8);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 0 0.5px rgba(255, 255, 255, 0.15);
+  animation: ios-banner 0.45s cubic-bezier(0.2, 0.9, 0.2, 1.1);
+}
+.banner-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  overflow: hidden;
+}
+.banner-icon svg {
+  width: 26px;
+  height: 26px;
+}
+.phone-banner-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.25;
+}
+.banner-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.banner-top strong {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.banner-when {
+  flex: none;
+  font-size: 13px;
+  color: var(--ios-label-2);
+}
+.banner-body {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.phone-banner-in {
+  position: absolute;
+  top: 54px;
+  left: 10px;
+  right: 10px;
+  z-index: 20;
+}
+@keyframes ios-banner {
+  from {
+    transform: translateY(-24px) scale(0.96);
+    opacity: 0;
+  }
+}
+
+/* ---------- Device ---------- */
+.phone-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 16px 40px;
+  background: rgba(3, 5, 12, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: ios-fade 0.2s ease-out;
+}
+.phone-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+}
+.iphone {
+  position: relative;
+  /* Height drives everything, so the phone keeps iPhone proportions on any window. */
+  height: min(844px, calc(100vh - 32px));
+  width: calc(min(844px, calc(100vh - 32px)) * 400 / 844);
+  min-width: 0;
+  flex: none;
+  padding: 11px;
+  border-radius: 64px;
+  background: linear-gradient(135deg, #a9abb0 0%, #5d5f64 22%, #c9cbcf 48%, #4e5055 74%, #9fa1a6 100%);
+  box-shadow:
+    0 40px 90px rgba(0, 0, 0, 0.65),
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.35),
+    inset 0 0 0 4px #1b1c1f;
+  animation: ios-device-in 0.42s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+@keyframes ios-device-in {
+  from {
+    transform: translateY(40px) scale(0.94);
+    opacity: 0;
+  }
+}
+@keyframes ios-fade {
+  from {
+    opacity: 0;
+  }
+}
+.iphone-btn {
+  position: absolute;
+  width: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #6d6f74, #b7b9bd);
+}
+.iphone-btn-action {
+  left: -3px;
+  top: 16%;
+  height: 4%;
+}
+.iphone-btn-up {
+  left: -3px;
+  top: 23%;
+  height: 7.5%;
+}
+.iphone-btn-down {
+  left: -3px;
+  top: 32%;
+  height: 7.5%;
+}
+.iphone-btn-power {
+  right: -3px;
+  top: 26%;
+  height: 11%;
+}
+.phone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  border-radius: 54px;
+  overflow: hidden;
+  color: var(--ios-label);
+  background: var(--wall);
+  background-size: cover;
+}
+.phone.in-app {
+  background: var(--ios-bg);
+}
+
+/* Wallpapers: soft iOS-style colour fields. */
+.wall-night {
+  --wall: radial-gradient(120% 80% at 10% 0%, #5b4bff 0%, transparent 55%), radial-gradient(120% 70% at 100% 60%, #ff4f7b 0%, transparent 55%),
+    radial-gradient(100% 70% at 20% 100%, #ff9a3d 0%, transparent 60%), #120d2e;
+}
+.wall-thames {
+  --wall: radial-gradient(120% 80% at 0% 0%, #2ad1ff 0%, transparent 55%), radial-gradient(120% 80% at 100% 100%, #2547ff 0%, transparent 60%),
+    linear-gradient(180deg, #0a2a55, #061a3a);
+}
+.wall-sunset {
+  --wall: radial-gradient(120% 70% at 50% 0%, #ffb35c 0%, transparent 60%), radial-gradient(120% 80% at 0% 100%, #ff3d77 0%, transparent 60%),
+    linear-gradient(180deg, #5b1f6b, #2a0f3d);
+}
+.wall-day {
+  --wall: radial-gradient(120% 80% at 100% 0%, #ffe28a 0%, transparent 55%), radial-gradient(120% 90% at 0% 100%, #6fd3ff 0%, transparent 60%),
+    linear-gradient(180deg, #8fb8ff, #c8e4ff);
+}
+
+/* ---------- Status bar + Dynamic Island ---------- */
+.phone-status {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 54px;
+  padding: 6px 30px 0 34px;
+  flex: none;
+  color: #fff;
+}
+.sb-time {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.sb-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sb-battery {
+  position: relative;
+  display: inline-block;
+  width: 25px;
+  height: 12px;
+  padding: 1.5px;
+  border-radius: 4px;
+  border: 1.2px solid rgba(255, 255, 255, 0.45);
+}
+.sb-battery::after {
+  content: "";
+  position: absolute;
+  right: -4px;
+  top: 3.5px;
+  width: 2px;
+  height: 4px;
+  border-radius: 0 1px 1px 0;
+  background: rgba(255, 255, 255, 0.45);
+}
+.sb-battery span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: #fff;
+}
+.dynamic-island {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 11;
+  width: 124px;
+  height: 36px;
+  margin-left: -62px;
+  border-radius: 20px;
+  background: #000;
+}
+.phone-screen {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.phone-homebar {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  z-index: 12;
+  width: 138px;
+  height: 5px;
+  margin-left: -69px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+/* ---------- Home screen ---------- */
+.home {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-bottom: 22px;
+}
+.home-pages {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.home-pages::-webkit-scrollbar {
+  display: none;
+}
+.home-page {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  padding: 6px 22px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px 0;
+  justify-items: center;
+}
+.app-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 76px;
+  color: #fff;
+}
+.app-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  /* The iOS "squircle" is close to a 22.5% radius. */
+  border-radius: 14px;
+  overflow: visible;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+.app-icon > svg,
+.app-icon > span:not(.ios-badge) {
+  border-radius: 14px;
+}
+.app-tile:active .app-icon {
+  transform: scale(0.9);
+  filter: brightness(0.75);
+}
+.app-label {
+  max-width: 76px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.1;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.page-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 0 12px;
+}
+.page-dots button {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+}
+.page-dots button.on {
+  background: #fff;
+}
+.home-dock {
+  display: flex;
+  justify-content: space-around;
+  margin: 0 12px;
+  padding: 14px 8px;
+  border-radius: 34px;
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(30px) saturate(1.6);
+  -webkit-backdrop-filter: blur(30px) saturate(1.6);
+}
+.home-dock .app-tile {
+  width: auto;
+}
+
+/* Special live icons */
+.ico-cal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #000;
+}
+.ico-cal-day {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #ff3b30;
+  text-transform: none;
+  margin-top: 2px;
+}
+.ico-cal-num {
+  font-size: 34px;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.ico-board {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  height: 100%;
+  padding: 0 8px;
+  font: 700 9px/1 ui-monospace, "SF Mono", Menlo, monospace;
+  color: #ffb000;
+  text-shadow: 0 0 4px rgba(255, 176, 0, 0.6);
+}
+.ico-board span:last-child {
+  align-self: flex-end;
+}
+.ico-wallet {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  padding: 10px 8px;
+}
+.ico-wallet i {
+  display: block;
+  height: 9px;
+  border-radius: 3px;
+}
+.ico-calc {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  width: 100%;
+  height: 100%;
+  padding: 11px;
+}
+.ico-calc i {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+/* ---------- Widget ---------- */
+.widget {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 128px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  color: #fff;
+  text-align: left;
+  background: rgba(20, 20, 30, 0.38);
+  backdrop-filter: blur(30px) saturate(1.6);
+  -webkit-backdrop-filter: blur(30px) saturate(1.6);
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.18);
+}
+.widget-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.widget-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #ff9f0a;
+}
+.widget-big {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.widget-line {
+  font-size: 14px;
+  font-weight: 600;
+}
+.widget-warn {
+  font-size: 12px;
+  color: #ffd60a;
+}
+.widget-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: none;
+}
+.widget-ring {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: conic-gradient(#30d158 var(--p), rgba(255, 255, 255, 0.18) 0);
+}
+.widget-ring span {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(20, 20, 30, 0.9);
+  font-size: 17px;
+  font-weight: 700;
+}
+.widget-small {
+  font-size: 11px;
+  color: var(--ios-label-2);
+}
+.widget-money {
+  font-size: 15px;
+  font-weight: 700;
+}
+.widget-roundel {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  background: #fff;
+}
+.widget-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.widget-small-tile {
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 3px;
+  min-height: 0;
+  height: 124px;
+  padding: 12px 14px;
+  overflow: hidden;
+}
+.widget-mid {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.widget-lines,
+.widget-goals {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 0;
+}
+.widget-lines span,
+.widget-goals span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.widget-lines i {
+  flex: none;
+  width: 4px;
+  height: 12px;
+  border-radius: 2px;
+}
+.widget-goals span.done {
+  color: #30d158;
+}
+
+/* ---------- Opening an app ---------- */
+.ios-app-enter {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  animation: ios-app-in 0.32s cubic-bezier(0.2, 0.9, 0.25, 1);
+  transform-origin: 50% 60%;
+}
+@keyframes ios-app-in {
+  from {
+    transform: scale(0.86);
+    opacity: 0;
+    border-radius: 40px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ios-app-enter,
+  .iphone,
+  .phone-banner {
+    animation: none;
+  }
+}
+
+/* ---------- iOS app chrome (applies to every app) ---------- */
+.phone .app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  margin: 0;
+  border-radius: 0;
+  background: var(--ios-bg);
+  font-size: 15px;
+  color: var(--ios-label);
+}
+.phone .app-head {
+  display: grid;
+  grid-template-columns: 84px 1fr 84px;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 8px 0 6px;
+  border-bottom: 0.5px solid var(--ios-sep);
+  background: rgba(22, 22, 24, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.phone .app-head h3 {
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+.phone .app-back {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ios-blue);
+  font-size: 17px;
+  line-height: 1;
+}
+.phone .app-head-right {
+  min-width: 0;
+  text-align: right;
+}
+.phone .app-body {
+  padding: 16px 16px 40px;
+  gap: 14px;
+}
+.phone .app-body h4 {
+  margin: 4px 4px -6px;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: var(--ios-label-2);
+}
+.phone .app-foot {
+  padding: 10px 16px 30px;
+  border-top: 0.5px solid var(--ios-sep);
+}
+.phone .muted {
+  color: var(--ios-label-2);
+}
+.phone .link {
+  color: var(--ios-blue);
+  font-weight: 400;
+}
+
+/* Inset grouped lists */
+.phone .plist {
+  border-radius: 12px;
+  background: var(--ios-group);
+  overflow: hidden;
+}
+.phone .plist > li {
+  position: relative;
+}
+.phone .plist > li + li::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 60px;
+  right: 0;
+  border-top: 0.5px solid var(--ios-sep);
+}
+.phone .prow {
+  padding: 10px 14px;
+  border-radius: 0;
+}
+.phone .prow:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.phone .prow:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+.phone .prow-title {
+  font-weight: 600;
+  font-size: 16px;
+}
+.phone .prow-sub {
+  color: var(--ios-label-2);
+  font-size: 14px;
+}
+.phone .pcard {
+  border-radius: 12px;
+  background: var(--ios-group);
+  padding: 14px;
+}
+.phone .badge-n,
+.phone .prow-meta .badge-n {
+  background: var(--ios-blue);
+  box-shadow: none;
+}
+
+/* Buttons */
+.phone .pbtn {
+  padding: 11px 18px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  background: var(--ios-blue);
+  color: #fff;
+}
+.phone .pbtn.small {
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+}
+.phone .pbtn.ghosty {
+  background: var(--ios-fill);
+  color: var(--ios-blue);
+}
+.phone .pbtn:disabled {
+  opacity: 0.4;
+}
+
+/* Fields */
+.phone .search,
+.phone .field input,
+.phone .field select {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: none;
+  background: var(--ios-fill);
+  color: var(--ios-label);
+  font-size: 16px;
+}
+.phone .search {
+  padding-left: 34px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Ccircle cx='7' cy='7' r='5' fill='none' stroke='%238e8e93' stroke-width='1.8'/%3E%3Cpath d='M11 11l3.5 3.5' stroke='%238e8e93' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E")
+      12px 50% no-repeat,
+    var(--ios-fill);
+}
+.phone .field > span {
+  color: var(--ios-label-2);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+/* iOS switch for toggles */
+.phone .toggle input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: none;
+  width: 51px;
+  height: 31px;
+  border-radius: 16px;
+  background: rgba(120, 120, 128, 0.32);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.phone .toggle input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s cubic-bezier(0.3, 0.9, 0.3, 1.1);
+}
+.phone .toggle input[type="checkbox"]:checked {
+  background: var(--ios-green);
+}
+.phone .toggle input[type="checkbox"]:checked::after {
+  transform: translateX(20px);
+}
+
+/* Segmented control */
+.phone .tabs {
+  margin: 10px 16px 0;
+  padding: 2px;
+  border-radius: 9px;
+  background: var(--ios-fill);
+}
+.phone .tabs button {
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--ios-label);
+}
+.phone .tabs button.on {
+  background: #636366;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Messages */
+.phone .chat-scroll {
+  padding: 12px 12px 8px;
+}
+.phone .bubble {
+  max-width: 75%;
+  padding: 8px 13px 6px;
+  border-radius: 19px;
+  background: #26252a;
+  font-size: 16px;
+  line-height: 1.3;
+}
+.phone .bubble.mine {
+  background: var(--ios-blue);
+}
+.phone .bubble-row:not(.mine) .bubble {
+  border-bottom-left-radius: 6px;
+}
+.phone .bubble-row.mine .bubble {
+  border-bottom-right-radius: 6px;
+}
+.phone .bubble-time {
+  font-size: 11px;
+}
+.phone .quick button {
+  border-radius: 16px;
+  padding: 6px 12px;
+  background: var(--ios-group-2);
+  font-size: 14px;
+}
+.phone .composer {
+  padding: 8px 12px 28px;
+  border-top: 0.5px solid var(--ios-sep);
+}
+.phone .composer input {
+  border-radius: 18px;
+  border: 1px solid var(--ios-sep);
+  background: transparent;
+  font-size: 16px;
+}
+.phone .send {
+  width: 32px;
+  height: 32px;
+  background: var(--ios-blue);
+  font-size: 14px;
+}
+.phone .send:disabled {
+  background: #3a3a3c;
+  opacity: 1;
+}
+
+/* Wallpaper picker in Settings uses the same wallpapers */
+.wall-picker .wall {
+  background: var(--wall);
+}
+
+/* ---------- Phone-sized screens: the phone becomes your screen ---------- */
+@media (max-width: 600px) {
+  .phone-layer {
+    padding: 0;
+    justify-content: center;
+    align-items: stretch;
+  }
+  .iphone {
+    height: 100dvh;
+    width: 100vw;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .iphone-btn,
+  .dynamic-island {
+    display: none;
+  }
+  .phone {
+    border-radius: 0;
+  }
+  .phone-status {
+    padding-right: 56px;
+  }
+  .phone-close {
+    top: 10px;
+    right: 10px;
+    z-index: 60;
+    width: 32px;
+    height: 32px;
+  }
+  .phone-fab {
+    right: 14px;
+    bottom: 14px;
+    width: 46px;
+    height: 78px;
+  }
+}

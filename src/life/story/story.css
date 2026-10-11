@@ -1,0 +1,119 @@
+/* Characters who text you: phone thread extras and the hub inbox card. */
+
+.story-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #4da3ff;
+}
+
+.story-day {
+  text-align: center;
+  margin: 8px 0 4px;
+  font-size: 11px;
+}
+
+.story-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.story-replies {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px 12px;
+}
+.story-replies button {
+  padding: 8px 14px;
+  border-radius: 18px;
+  border: 1px solid #0b84ff;
+  color: var(--text);
+  background: transparent;
+  text-align: left;
+  font-size: 14px;
+}
+.story-replies button:hover {
+  background: rgba(11, 132, 255, 0.16);
+}
+.story-replies.compact {
+  padding: 0;
+  margin-top: 10px;
+}
+.story-replies.compact button {
+  font-size: 13px;
+  padding: 7px 12px;
+}
+
+.story-hint {
+  padding: 10px 12px 14px;
+}
+
+.story-rel {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+}
+.story-rel span {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--p-bg, var(--card));
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Hub card */
+.story-inbox .card-head {
+  margin-bottom: 8px;
+}
+.story-who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+.story-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.story-text {
+  margin: 0;
+  padding: 7px 11px;
+  border-radius: 14px 14px 14px 4px;
+  background: var(--card-2);
+  font-size: 14px;
+  line-height: 1.35;
+  width: fit-content;
+  max-width: 100%;
+}
+.story-plans {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.story-inbox > .story-plans:first-child {
+  margin: 0;
+  padding: 0;
+  border-top: none;
+}
+.story-plans li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.story-plan-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}

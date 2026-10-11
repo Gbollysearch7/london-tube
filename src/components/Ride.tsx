@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import MapView from "./MapView";
 import ModeBadge, { MODE_ICON } from "./ModeBadge";
-import { Journey, mulberry32 } from "../game/engine";
+import { Journey, continues, mulberry32 } from "../game/engine";
 import { fmtMoney, fmtTime } from "../game/format";
-import { LINE, STATION, project } from "../game/network";
+import { LINE, STATION, isRail, project } from "../game/network";
 import { CALM_THRESHOLD } from "../game/scoring";
+import { setGameView } from "../phone/gameBridge";
+import { usePrefs } from "../phone/prefs";
+import { announce, buzz, celebrate, hush, say, sfx, startRumble, stopRumble } from "../juice";
+import "../juice/juice.css";
 import type { Link, Mission } from "../game/types";
 
 interface Props {
@@ -12,6 +16,10 @@ interface Props {
   route: Link[];
   onFinish: (j: Journey) => void;
   onAbandon: () => void;
+  /** Fixed RNG seed (e.g. the daily challenge, so everyone gets the same events). Random if omitted. */
+  seed?: number;
+  /** Starting playback speed, e.g. 4 for one-tap routine trips. */
+  initialSpeed?: 1 | 2 | 4;
 }
 
 const SPEEDS = [1, 2, 4] as const;
@@ -33,22 +41,41 @@ const ANNOUNCEMENTS: Record<string, string[]> = {
   bike: ["Pedalling hard up a slight incline.", "A bus is squeezing past. Hold your line.", "Bell, bell!"],
 };
 
+/** Modes you ride in (and so arrive at a stop in), as opposed to walking or cycling. */
+const isVehicle = (mode: string) => mode !== "walk" && mode !== "bike";
+
+/** Where this run on the current line ends, for "This is a … train to …". */
+function runEnd(route: Link[], i: number): string {
+  let j = i;
+  while (j + 1 < route.length && continues(route[j], route[j + 1])) j++;
+  return route[j].to;
+}
+
 function announcementsFor(mode: string) {
   if (mode === "bus" || mode === "boat" || mode === "walk" || mode === "bike") return ANNOUNCEMENTS[mode];
   return ANNOUNCEMENTS.rail;
 }
 
-export default function Ride({ mission, route, onFinish, onAbandon }: Props) {
-  const journey = useMemo(() => new Journey(mission, route, mulberry32(Date.now() & 0xffffffff)), [mission, route]);
+export default function Ride({ mission, route, onFinish, onAbandon, seed, initialSpeed = 1 }: Props) {
+  const journey = useMemo(() => new Journey(mission, route, mulberry32(seed ?? Date.now() & 0xffffffff)), [mission, route, seed]);
   const [, setTick] = useState(0);
-  const [speed, setSpeed] = useState<number>(1);
+  const [speed, setSpeed] = useState<number>(initialSpeed);
   const [paused, setPaused] = useState(false);
   const [skipping, setSkipping] = useState(false);
   const finished = useRef(false);
+  const prefs = usePrefs();
+  const [shake, setShake] = useState(false);
+
+  // Let the phone apps follow this ride live.
+  useEffect(() => {
+    setGameView({ journey });
+    return () => setGameView({ journey: null });
+  }, [journey]);
 
   // Animation loop: advance game time by real time × speed.
   useEffect(() => {
     let raf = 0;
+    let finishTimer = 0;
     let last = performance.now();
     const frame = (now: number) => {
       const dt = Math.min(0.25, (now - last) / 1000);
@@ -60,19 +87,33 @@ export default function Ride({ mission, route, onFinish, onAbandon }: Props) {
       }
       if (journey.done && !finished.current) {
         finished.current = true;
-        setTimeout(() => onFinish(journey), 900);
+        finishTimer = window.setTimeout(() => onFinish(journey), 900);
       }
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      // Leaving the ride (abandon, or a re-run of this effect) must not fire a stale finish.
+      if (finishTimer) {
+        window.clearTimeout(finishTimer);
+        finished.current = false;
+      }
+    };
   }, [journey, paused, speed, skipping, onFinish]);
 
   // Keyboard shortcuts: 1/2/4 for speed, space to pause.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (journey.pending) return;
-      if (e.key === "1" || e.key === "2" || e.key === "4") setSpeed(Number(e.key));
+      // Typing in the phone (or any field) must not change speed or pause the ride.
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
+      if (e.key === "1" || e.key === "2" || e.key === "4") {
+        setSpeed(Number(e.key));
+        setSkipping(false);
+        setPaused(false);
+      }
       if (e.key === " ") {
         e.preventDefault();
         setPaused((p) => !p);
@@ -96,6 +137,91 @@ export default function Ride({ mission, route, onFinish, onAbandon }: Props) {
   const announcement = lines[Math.floor(journey.clock / 3) % lines.length];
   const remainingStops = route.slice(journey.legIdx).map((l) => l.to);
 
+  // ---- Juice: every cue below fires on a state change, never per frame. ----
+  const quiet = skipping || effectiveSpeed > 2; // no speech while fast-forwarding
+  const quietRef = useRef(quiet);
+  quietRef.current = quiet;
+
+  // Arrivals, boarding, next-station calls.
+  const prevLeg = useRef<{ idx: number; phase: string } | null>(null);
+  useEffect(() => {
+    const prev = prevLeg.current;
+    prevLeg.current = { idx: journey.legIdx, phase: journey.phase };
+    if (!prev) return; // nothing to react to on mount
+    const cur = journey.link;
+    const arrivedBy = journey.legIdx > prev.idx ? route[prev.idx] : undefined;
+    if (arrivedBy && isVehicle(arrivedBy.mode)) sfx("chime");
+    if (!cur || journey.phase !== "move" || (prev.idx === journey.legIdx && prev.phase === "move")) {
+      // Stepping off a train (end of trip or interchange).
+      if (arrivedBy && isRail(arrivedBy.mode) && !quietRef.current) announce(say.mindTheGap());
+      return;
+    }
+    const prevLink = route[journey.legIdx - 1];
+    const boarding = !continues(prevLink, cur);
+    if (boarding && isRail(cur.mode)) {
+      sfx("doors");
+      if (!quietRef.current)
+        announce(`${say.thisIs(LINE[cur.line].name, STATION[runEnd(route, journey.legIdx)].name)} ${say.nextStation(STATION[cur.to].name)}`);
+    } else if (!boarding && isRail(cur.mode) && !quietRef.current) {
+      announce(say.nextStation(STATION[cur.to].name));
+    }
+  }, [journey, route, journey.legIdx, journey.phase]);
+
+  // Oyster beep for each new charge (touch in, cap adjustments, bus taps).
+  const charges = journey.meter.charges.length;
+  const seenCharges = useRef(0);
+  useEffect(() => {
+    if (charges > seenCharges.current) {
+      sfx("oyster");
+      buzz("tap");
+    }
+    seenCharges.current = charges;
+  }, [charges]);
+
+  // Something needs a decision.
+  const hasEvent = !!journey.pending;
+  useEffect(() => {
+    if (hasEvent) {
+      sfx("alert");
+      buzz("event");
+    }
+  }, [hasEvent]);
+
+  // Running late: one shake, a sting and a buzz at the moment it happens.
+  const late = minutesLeft < 0 && !journey.done;
+  const wasLate = useRef(late);
+  useEffect(() => {
+    if (late && !wasLate.current) {
+      wasLate.current = true;
+      setShake(true);
+      sfx("late");
+      buzz("late");
+      const t = window.setTimeout(() => setShake(false), 600);
+      return () => window.clearTimeout(t);
+    }
+    wasLate.current = late;
+  }, [late]);
+  const urgent = !journey.done && minutesLeft >= 0 && minutesLeft < 5;
+
+  // Quiet rumble while a train is moving.
+  const rumbling = moving && isRail(link.mode);
+  useEffect(() => {
+    if (rumbling && prefs.sound) startRumble();
+    else stopRumble();
+    return stopRumble;
+  }, [rumbling, prefs.sound, prefs.volume]);
+
+  // A small pop for arriving on time.
+  useEffect(() => {
+    if (journey.done && journey.clock <= mission.deadline) {
+      celebrate("small");
+      buzz("success");
+    }
+  }, [journey, journey.done, mission.deadline]);
+
+  // Leaving the ride silences any announcement mid-sentence.
+  useEffect(() => hush, []);
+
   const status = journey.done
     ? `Arrived at ${STATION[mission.to].name}!`
     : journey.phase === "wait"
@@ -111,7 +237,7 @@ export default function Ride({ mission, route, onFinish, onAbandon }: Props) {
   return (
     <div className="screen ride">
       <header className="hud">
-        <div className={`hud-clock ${timeState}`}>
+        <div className={`hud-clock ${timeState} ${urgent ? "juice-pulse" : ""} ${shake ? "juice-shake" : ""}`}>
           <span className="hud-big">{fmtTime(journey.clock)}</span>
           <span className="hud-sub">
             due {fmtTime(mission.deadline)} ·{" "}

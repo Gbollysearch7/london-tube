@@ -16,6 +16,8 @@ export function mulberry32(seed: number): Rng {
   };
 }
 
+const snap = (n: number) => (Math.abs(n - Math.round(n)) < 1e-6 ? Math.round(n) : n);
+
 /** Typical wait at the stop before boarding, in minutes. */
 const BASE_WAIT: Record<Mode, number> = {
   tube: 2,
@@ -50,8 +52,12 @@ function stressRate(mode: Mode, peak: boolean, rain: boolean): number {
   }
 }
 
-export function expectedTravel(link: Link, peak: boolean, rain: boolean): number {
-  let m = link.minutes;
+/**
+ * Planned in-vehicle minutes. `delay` is the line's disruption multiplier; it never speeds a
+ * line up, which keeps the solver's no-delay lower bound optimistic (and so still correct).
+ */
+export function expectedTravel(link: Link, peak: boolean, rain: boolean, delay = 1): number {
+  let m = link.minutes * Math.max(1, delay);
   if (link.mode === "bus") m *= peak ? 1.3 : 1.1;
   if (link.mode === "walk" && rain) m *= 1.1;
   if (link.mode === "bike" && rain) m *= 1.3;
@@ -100,7 +106,7 @@ export class Journey {
     private rng: Rng | null,
   ) {
     this.clock = mission.start;
-    this.meter = new FareMeter(mission.weekday);
+    this.meter = new FareMeter(mission.weekday, mission.passes);
     this.eventsLeft = rng ? 4 : 0;
     this.peakAtStart = isPeak(mission.start, mission.weekday);
     this.startLeg(0);
@@ -137,8 +143,9 @@ export class Journey {
         const untilEvent = this.scheduled.at - (this.phaseTotal - this.remaining);
         if (untilEvent <= step) step = Math.max(0, untilEvent);
       }
-      this.clock += step;
-      this.remaining -= step;
+      // Snap away float drift from fractional frame steps so fare boundaries match the plan.
+      this.clock = snap(this.clock + step);
+      this.remaining = snap(this.remaining - step);
       dt -= step;
       const rate =
         this.phase === "wait" ? (isRail(link.mode) && this.peak ? 0.3 : 0.1) : stressRate(link.mode, this.peak, this.rain);
@@ -209,9 +216,10 @@ export class Journey {
     if (this.rng && wait > 0) wait = Math.max(1, Math.round(wait * (0.4 + this.rng() * 1.3)));
     if (!cont && prev && link.mode !== "walk" && prev.mode !== "walk") this.addStress(2);
 
-    let travel = expectedTravel(link, this.peak, this.rain);
+    let travel = expectedTravel(link, this.peak, this.rain, this.mission.delayedLines?.[link.line]);
     if (this.rng) {
-      const spread = link.mode === "bus" ? (this.peak ? [0.85, 1.45] : [0.85, 1.25]) : isRail(link.mode) ? [0.95, 1.15] : [1, 1];
+      // Centred on the planner's estimate, so plans are honest on average; events add the real upsets.
+      const spread = link.mode === "bus" ? (this.peak ? [0.8, 1.2] : [0.9, 1.1]) : isRail(link.mode) ? [0.95, 1.05] : [1, 1];
       travel = Math.max(1, Math.round(travel * (spread[0] + this.rng() * (spread[1] - spread[0]))));
     }
     this.travel = travel;
@@ -238,7 +246,7 @@ export class Journey {
 
   private beginMove() {
     const link = this.route[this.legIdx];
-    this.meter.board(link, this.clock);
+    this.meter.board(link, this.clock, continues(this.route[this.legIdx - 1], link));
     this.phase = "move";
     this.remaining = this.travel;
     this.phaseTotal = this.travel;

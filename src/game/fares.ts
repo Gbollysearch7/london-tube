@@ -1,5 +1,5 @@
 import { STATION, isRail, LINE } from "./network";
-import type { Charge, Link } from "./types";
+import type { Charge, Link, Passes } from "./types";
 
 // Game-scale pay-as-you-go fares, modelled on London's real rules:
 // rail fares by zones and peak time, the bus Hopper, hire-bike blocks and a flat river fare.
@@ -31,6 +31,11 @@ export function railFare(zones: Iterable<number>, peak: boolean): number {
   return peak ? row.peak : row.off;
 }
 
+/** Railcard price: a third off, rounded to the nearest 5p. */
+export function railcardFare(fare: number): number {
+  return Math.round(((fare * 2) / 3) * 20) / 20;
+}
+
 export function zoneLabel(zones: Iterable<number>): string {
   const list = [...zones];
   const lo = Math.min(...list);
@@ -48,7 +53,14 @@ export class FareMeter {
   private hopperStart: number | null = null;
   private bikeStart: number | null = null;
 
-  constructor(private weekday: boolean) {}
+  private passes: Passes;
+
+  constructor(
+    private weekday: boolean,
+    passes?: Passes,
+  ) {
+    this.passes = passes ?? {};
+  }
 
   get total(): number {
     return Math.round(this.charges.reduce((s, c) => s + c.amount, 0) * 100) / 100;
@@ -61,8 +73,9 @@ export class FareMeter {
     }
   }
 
-  /** Stepping aboard after the wait. */
-  board(link: Link, time: number) {
+  /** Stepping aboard after the wait. `continuing` means staying on the same vehicle. */
+  board(link: Link, time: number, continuing = false) {
+    if (continuing && (link.mode === "bus" || link.mode === "boat")) return;
     if (link.mode === "bus") this.busTap(time, LINE[link.line].name);
     if (link.mode === "boat") this.add(`${LINE[link.line].name}`, BOAT_FARE, time);
     if (link.mode === "bike" && this.bikeStart === null) this.bikeStart = time;
@@ -75,14 +88,24 @@ export class FareMeter {
       if (!next || !isRail(next.mode)) this.endRail(time);
     }
     if (link.mode === "bike" && this.bikeStart !== null && next?.mode !== "bike") {
-      const blocks = Math.max(1, Math.ceil((time - this.bikeStart) / BIKE_BLOCK_MINUTES));
-      this.add(`Hire bike (${blocks} × 30 min)`, blocks * BIKE_FARE, time);
+      if (this.passes.ownBike) this.add("Cycling (own bike)", 0, time);
+      else {
+        const blocks = Math.max(1, Math.ceil((time - this.bikeStart) / BIKE_BLOCK_MINUTES - 1e-6));
+        this.add(`Hire bike (${blocks} × 30 min)`, blocks * BIKE_FARE, time);
+      }
       this.bikeStart = null;
     }
   }
 
   /** Bus tap with the Hopper rule: unlimited buses within an hour of the first tap. */
   busTap(time: number, label: string): number {
+    // A pass covers every bus; the Hopper still starts so the UI timer behaves the same.
+    const pass = this.passes.travelcardZones ? "travelcard" : this.passes.busPass ? "bus pass" : null;
+    if (pass) {
+      if (this.hopperStart === null || time - this.hopperStart >= HOPPER_MINUTES) this.hopperStart = time;
+      this.add(`${label} (${pass})`, 0, time);
+      return 0;
+    }
     if (this.hopperStart !== null && time - this.hopperStart < HOPPER_MINUTES) {
       this.add(`${label} (Hopper — free)`, 0, time);
       return 0;
@@ -93,7 +116,12 @@ export class FareMeter {
   }
 
   hopperActive(time: number): boolean {
-    return this.hopperStart !== null && time - this.hopperStart < HOPPER_MINUTES;
+    return this.hopperRemaining(time) > 0;
+  }
+
+  /** Minutes left on the current bus Hopper, or 0. */
+  hopperRemaining(time: number): number {
+    return this.hopperStart === null ? 0 : Math.max(0, HOPPER_MINUTES - (time - this.hopperStart));
   }
 
   add(label: string, amount: number, time: number) {
@@ -103,8 +131,26 @@ export class FareMeter {
   private endRail(time: number) {
     if (!this.rail) return;
     const peak = isPeak(this.rail.touchIn, this.weekday);
-    const fare = railFare(this.rail.zones, peak);
-    this.add(`Rail fare, ${zoneLabel(this.rail.zones)} ${peak ? "(peak)" : "(off-peak)"}`, fare, time);
+    const zones = [...this.rail.zones];
+    const base = `Rail fare, ${zoneLabel(zones)} ${peak ? "(peak)" : "(off-peak)"}`;
     this.rail = null;
+    const card = this.passes.travelcardZones ?? 0;
+    let fare: number;
+    let note = "";
+    if (card > 0 && zones.every((z) => z <= card)) {
+      this.add(`${base} (travelcard)`, 0, time);
+      return;
+    }
+    if (card > 0) {
+      // Outside the travelcard: pay an extension fare for the zones it doesn't cover.
+      const outside = zones.filter((z) => z > card);
+      fare = railFare(outside.length < zones.length ? [card + 1, ...outside] : outside, peak);
+      note = ` (travelcard + ${zoneLabel(outside)} extension)`;
+    } else fare = railFare(zones, peak);
+    if (this.passes.railcard && !peak) {
+      fare = railcardFare(fare);
+      note += " (railcard)";
+    }
+    this.add(base + note, fare, time);
   }
 }
